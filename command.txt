@@ -1,0 +1,50 @@
+@echo off
+setlocal enabledelayedexpansion
+
+REM Prompt for the new IP configuration
+set /p ipconfig="Enter the IP configuration in format 'IP/MASK_OPTION/GATEWAY_OPTION' (e.g., 192.168.0.149/0/1): "
+
+REM Split the input into IP, MASK_OPTION, and GATEWAY_OPTION
+for /f "tokens=1,2,3 delims=/" %%a in ("%ipconfig%") do (
+    set IP=%%a
+    set MASK_OPTION=%%b
+    set GATEWAY_OPTION=%%c
+)
+
+REM Calculate the Subnet Mask based on MASK_OPTION
+if "%MASK_OPTION%"=="0" (
+    set MASK=255.255.255.0
+) else (
+    set MASK=255.255.0.0
+)
+
+REM Calculate the Gateway based on GATEWAY_OPTION
+for /f "tokens=1,2,3 delims=." %%a in ("%IP%") do (
+    set IP_BASE=%%a.%%b.%%c.
+)
+
+if "%GATEWAY_OPTION%"=="1" (
+    set GATEWAY=%IP_BASE%1
+) else (
+    set GATEWAY=
+)
+
+REM Define DNS servers
+set DNS1=10.5.18.13
+set DNS2=10.5.18.14
+
+REM Show the settings to confirm
+echo Configuring Ethernet with:
+echo IP Address: %IP%
+echo Subnet Mask: %MASK%
+echo Default Gateway: %GATEWAY%
+echo Preferred DNS: %DNS1%
+echo Alternate DNS: %DNS2%
+
+REM Apply the new IP settings and DNS servers
+netsh interface ip set address name="Ethernet" static %IP% %MASK% %GATEWAY%
+netsh interface ip set dns name="Ethernet" static %DNS1% primary
+netsh interface ip add dns name="Ethernet" %DNS2% index=2
+
+echo Configuration applied successfully.
+pause
